@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import chalk from 'chalk';
 
@@ -27,8 +28,10 @@ app.use('/students', studentsRoutes);
 app.use('/courses', coursesRoutes);
 app.use('/enrollments', enrollmentsRoutes);   // ← חדש
 
-app.listen(3000, () => {
-  console.log('השרת רץ על http://localhost:3000');
+const port = Number(process.env.PORT) || 3000;
+
+app.listen(port, () => {
+  console.log(`השרת רץ על http://localhost:${port}`);
   courses.forEach(course => {
     console.log(chalk.red(`id of the course: ${course.id}`));
     console.log(chalk.yellow(`the course: ${course.name}`));

@@ -1,72 +1,50 @@
-import { students } from '../data/students.js';
-import { courses } from '../data/courses.js';
+import {
+  getAllStudentsService,
+  getStudentByIdService,
+  createStudentService,
+  updateStudentService,
+  deleteStudentService
+} from '../services/studentsService.js';
 
-// קריאה כל התלמידים
+const sendServiceError = (res, error) => {
+  res.status(error.statusCode || 500).json({ error: error.message });
+};
+
 export const getAllStudents = (req, res) => {
-  res.json(students);
+  return getAllStudentsService()
+    .then((students) => res.json(students))
+    .catch((error) => sendServiceError(res, error));
 };
 
-// קריאה תלמיד לפי ID
 export const getStudentById = (req, res) => {
-  const id = parseInt(req.params.id);
-  const student = students.find(s => s.id === id);
+  const id = parseInt(req.params.id, 10);
 
-  if (!student) {
-    return res.status(404).json({ error: `תלמיד עם ID ${id} לא נמצא` });
-  }
-  
-  const enrolledCourses = courses.filter(c => student.enrolledCourses.includes(c.id));
-  
-  const studentWithCourses = {
-    ...student,
-    courseDetails: enrolledCourses
-  };
-  
-  res.json(studentWithCourses);
+  return getStudentByIdService(id)
+    .then((student) => res.json(student))
+    .catch((error) => sendServiceError(res, error));
 };
 
-// יצירת תלמיד חדש
 export const createStudent = (req, res) => {
-  const newStudent = {
-    id: students[students.length - 1].id + 1,
-    name: req.body.name,
-    phone: req.body.phone,
-    enrolledCourses: req.body.enrolledCourses || []
-  };
+  const { name, phone, enrolledCourses } = req.body;
 
-  students.push(newStudent);
-  res.json(newStudent);
+  return createStudentService(name, phone, enrolledCourses)
+    .then((student) => res.json(student))
+    .catch((error) => sendServiceError(res, error));
 };
 
-// עדכון תלמיד
 export const updateStudent = (req, res) => {
-  const id = parseInt(req.params.id);
-  const index = students.findIndex(s => s.id === id);
+  const id = parseInt(req.params.id, 10);
+  const { name, phone, enrolledCourses } = req.body;
 
-  if (index === -1) {
-    return res.status(404).json({ error: `תלמיד עם ID ${id} לא נמצא` });
-  }
-
-  const updatedStudent = {
-    id: id,
-    name: req.body.name,
-    phone: req.body.phone,
-    enrolledCourses: req.body.enrolledCourses || []
-  };
-
-  students[index] = updatedStudent;
-  res.json(updatedStudent);
+  return updateStudentService(id, name, phone, enrolledCourses)
+    .then((student) => res.json(student))
+    .catch((error) => sendServiceError(res, error));
 };
 
-// מחיקת תלמיד
 export const deleteStudent = (req, res) => {
-  const id = parseInt(req.params.id);
-  const index = students.findIndex(s => s.id === id);
+  const id = parseInt(req.params.id, 10);
 
-  if (index === -1) {
-    return res.status(404).json({ error: `תלמיד עם ID ${id} לא נמצא` });
-  }
-
-  students.splice(index, 1);
-  res.json({ message: `תלמיד עם ID ${id} נמחק בהצלחה` });
+  return deleteStudentService(id)
+    .then((result) => res.json(result))
+    .catch((error) => sendServiceError(res, error));
 };

@@ -1,68 +1,71 @@
-import { enrollments } from '../data/enrollments.js';
-import { students } from '../data/students.js';
-import { courses } from '../data/courses.js';
+import { readEnrollments, saveEnrollments } from '../data/enrollments.js';
+import { readStudents } from '../data/students.js';
+import { readCourses } from '../data/courses.js';
+import { createServiceError } from './serviceError.js';
 
-// קבל את כל הרישומים
 export const getAllEnrollmentsService = () => {
-  return enrollments;
+  return readEnrollments();
 };
 
-// קבל רישום לפי ID
 export const getEnrollmentByIdService = (id) => {
-  const enrollment = enrollments.find(e => e.id === id);
+  return readEnrollments().then((enrollments) => {
+    const enrollment = enrollments.find((item) => item.id === id);
 
-  if (!enrollment) {
-    throw new Error(`רישום עם ID ${id} לא נמצא`);
-  }
+    if (!enrollment) {
+      throw createServiceError(`רישום עם ID ${id} לא נמצא`, 404);
+    }
 
-  return enrollment;
+    return enrollment;
+  });
 };
 
-// הוסף רישום חדש (רישום תלמיד לקורס)
 export const createEnrollmentService = (studentId, courseId) => {
-  // בדיקה שהשדות קיימים
   if (!studentId || !courseId) {
-    throw new Error('חסרים: studentId או courseId');
+    return Promise.reject(createServiceError('חסרים: studentId או courseId', 400));
   }
 
-  // בדיקה שהתלמיד קיים
-  const studentExists = students.find(s => s.id === studentId);
-  if (!studentExists) {
-    throw new Error(`תלמיד עם ID ${studentId} לא נמצא`);
-  }
+  return Promise.all([readEnrollments(), readStudents(), readCourses()])
+    .then(([enrollments, students, courses]) => {
+      const studentExists = students.find((student) => student.id === studentId);
+      if (!studentExists) {
+        throw createServiceError(`תלמיד עם ID ${studentId} לא נמצא`, 404);
+      }
 
-  // בדיקה שהקורס קיים
-  const courseExists = courses.find(c => c.id === courseId);
-  if (!courseExists) {
-    throw new Error(`קורס עם ID ${courseId} לא נמצא`);
-  }
+      const courseExists = courses.find((course) => course.id === courseId);
+      if (!courseExists) {
+        throw createServiceError(`קורס עם ID ${courseId} לא נמצא`, 404);
+      }
 
-  // בדיקה שהתלמיד לא כבר רשום לקורס הזה
-  const alreadyEnrolled = enrollments.find(
-    e => e.studentId === studentId && e.courseId === courseId
-  );
-  if (alreadyEnrolled) {
-    throw new Error(`התלמיד כבר רשום לקורס הזה`);
-  }
+      const alreadyEnrolled = enrollments.find(
+        (enrollment) =>
+          enrollment.studentId === studentId && enrollment.courseId === courseId
+      );
+      if (alreadyEnrolled) {
+        throw createServiceError('התלמיד כבר רשום לקורס הזה', 400);
+      }
 
-  const newEnrollment = {
-    id: enrollments[enrollments.length - 1].id + 1,
-    studentId: studentId,
-    courseId: courseId
-  };
+      const newEnrollment = {
+        id: enrollments.reduce((maxId, enrollment) => Math.max(maxId, enrollment.id), 0) + 1,
+        studentId,
+        courseId
+      };
 
-  enrollments.push(newEnrollment);
-  return newEnrollment;
+      enrollments.push(newEnrollment);
+      return saveEnrollments(enrollments).then(() => newEnrollment);
+    });
 };
 
-// מחק רישום (ביטול הרשמה לקורס)
 export const deleteEnrollmentService = (id) => {
-  const index = enrollments.findIndex(e => e.id === id);
+  return readEnrollments().then((enrollments) => {
+    const index = enrollments.findIndex((enrollment) => enrollment.id === id);
 
-  if (index === -1) {
-    throw new Error(`רישום עם ID ${id} לא נמצא`);
-  }
+    if (index === -1) {
+      throw createServiceError(`רישום עם ID ${id} לא נמצא`, 404);
+    }
 
-  enrollments.splice(index, 1);
-  return { message: `רישום עם ID ${id} נמחק בהצלחה` };
+    enrollments.splice(index, 1);
+    return saveEnrollments(enrollments).then(() => ({
+      message: `רישום עם ID ${id} נמחק בהצלחה`
+    }));
+  });
 };

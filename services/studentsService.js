@@ -1,76 +1,83 @@
-import { students } from '../data/students.js';
-import { courses } from '../data/courses.js';
+import { readCourses } from '../data/courses.js';
+import { readStudents, saveStudents } from '../data/students.js';
+import { createServiceError } from './serviceError.js';
 
-// קבל כל התלמידים
 export const getAllStudentsService = () => {
-  return students;
+  return readStudents();
 };
 
-// קבל תלמיד לפי ID
 export const getStudentByIdService = (id) => {
-  const student = students.find(s => s.id === id);
-  
-  if (!student) {
-    throw new Error(`תלמיד עם ID ${id} לא נמצא`);
-  }
-  
-  const enrolledCourses = courses.filter(c => student.enrolledCourses.includes(c.id));
-  
-  return {
-    ...student,
-    courseDetails: enrolledCourses
-  };
+  return Promise.all([readStudents(), readCourses()]).then(([students, courses]) => {
+    const student = students.find((item) => item.id === id);
+
+    if (!student) {
+      throw createServiceError(`תלמיד עם ID ${id} לא נמצא`, 404);
+    }
+
+    const enrolledCourses = courses.filter((course) =>
+      student.enrolledCourses.includes(course.id)
+    );
+
+    return {
+      ...student,
+      courseDetails: enrolledCourses
+    };
+  });
 };
 
-// הוסף תלמיד חדש
 export const createStudentService = (name, phone, enrolledCourses) => {
-  // בדיקה שהשדות קיימים
   if (!name || !phone) {
-    throw new Error('חסרים: name או phone');
+    return Promise.reject(createServiceError('חסרים: name או phone', 400));
   }
 
-  const newStudent = {
-    id: students[students.length - 1].id + 1,
-    name: name,
-    phone: phone,
-    enrolledCourses: enrolledCourses || []
-  };
+  return readStudents().then((students) => {
+    const newStudent = {
+      id: students.reduce((maxId, student) => Math.max(maxId, student.id), 0) + 1,
+      name,
+      phone,
+      enrolledCourses: enrolledCourses || []
+    };
 
-  students.push(newStudent);
-  return newStudent;
+    students.push(newStudent);
+    return saveStudents(students).then(() => newStudent);
+  });
 };
 
-// עדכן תלמיד
 export const updateStudentService = (id, name, phone, enrolledCourses) => {
   if (!name || !phone) {
-    throw new Error('חסרים: name או phone');
+    return Promise.reject(createServiceError('חסרים: name או phone', 400));
   }
 
-  const index = students.findIndex(s => s.id === id);
+  return readStudents().then((students) => {
+    const index = students.findIndex((student) => student.id === id);
 
-  if (index === -1) {
-    throw new Error(`תלמיד עם ID ${id} לא נמצא`);
-  }
+    if (index === -1) {
+      throw createServiceError(`תלמיד עם ID ${id} לא נמצא`, 404);
+    }
 
-  const updatedStudent = {
-    id: id,
-    name: name,
-    phone: phone,
-    enrolledCourses: enrolledCourses || []
-  };
+    const updatedStudent = {
+      id,
+      name,
+      phone,
+      enrolledCourses: enrolledCourses || []
+    };
 
-  students[index] = updatedStudent;
-  return updatedStudent;
+    students[index] = updatedStudent;
+    return saveStudents(students).then(() => updatedStudent);
+  });
 };
 
-// מחק תלמיד
 export const deleteStudentService = (id) => {
-  const index = students.findIndex(s => s.id === id);
+  return readStudents().then((students) => {
+    const index = students.findIndex((student) => student.id === id);
 
-  if (index === -1) {
-    throw new Error(`תלמיד עם ID ${id} לא נמצא`);
-  }
+    if (index === -1) {
+      throw createServiceError(`תלמיד עם ID ${id} לא נמצא`, 404);
+    }
 
-  students.splice(index, 1);
-  return { message: `תלמיד עם ID ${id} נמחק בהצלחה` };
+    students.splice(index, 1);
+    return saveStudents(students).then(() => ({
+      message: `תלמיד עם ID ${id} נמחק בהצלחה`
+    }));
+  });
 };

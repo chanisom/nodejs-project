@@ -1,32 +1,12 @@
-export const students = [
-  {
-    id: 101,
-    name: "david",
-    phone: "0520520520",
-    enrolledCourses: [1, 2]
-  },
-  {
-    id: 102,
-    name: "sara",
-    phone: "0533112233",
-    enrolledCourses: [1, 3, 4]
-  },
-  {
-    id: 103,
-    name: "michael",
-    phone: "0544455666",
-    enrolledCourses: [2, 5]
-  },
-  {
-    id: 104,
-    name: "chana",
-    phone: "0555566777",
-    enrolledCourses: [1, 4, 5]
-  },
-  {
-    id: 105,
-    name: "yosef",
-    phone: "0566677889",
-    enrolledCourses: [3, 4]
-  }
-];
+import { readFile, writeFile } from 'node:fs/promises';
+
+const studentsFile = new URL('./students.json', import.meta.url);
+
+export const readStudents = () => {
+  return readFile(studentsFile, 'utf8').then((text) => JSON.parse(text));
+};
+
+export const saveStudents = (students) => {
+  const text = JSON.stringify(students, null, 2);
+  return writeFile(studentsFile, text, 'utf8');
+};

@@ -1,74 +1,77 @@
-import { courses } from '../data/courses.js';
-import { students } from '../data/students.js';
+import { readCourses, saveCourses } from '../data/courses.js';
+import { readStudents } from '../data/students.js';
+import { createServiceError } from './serviceError.js';
 
-// קבל כל הקורסים
 export const getAllCoursesService = () => {
-  return courses;
+  return readCourses();
 };
 
-// קבל קורס לפי ID
 export const getCourseByIdService = (id) => {
-  const course = courses.find(c => c.id === id);
+  return Promise.all([readCourses(), readStudents()]).then(([courses, students]) => {
+    const course = courses.find((item) => item.id === id);
 
-  if (!course) {
-    throw new Error(`קורס עם ID ${id} לא נמצא`);
-  }
+    if (!course) {
+      throw createServiceError(`קורס עם ID ${id} לא נמצא`, 404);
+    }
 
-  const enrolledStudents = students.filter(s => s.enrolledCourses.includes(id));
+    const enrolledStudents = students.filter((student) =>
+      student.enrolledCourses.includes(id)
+    );
 
-  return {
-    ...course,
-    students: enrolledStudents
-  };
+    return {
+      ...course,
+      students: enrolledStudents
+    };
+  });
 };
 
-// הוסף קורס חדש
 export const createCourseService = (name, description) => {
-  // בדיקה שהשדות קיימים
   if (!name || !description) {
-    throw new Error('חסרים: name או description');
+    return Promise.reject(createServiceError('חסרים: name או description', 400));
   }
 
-  const newCourse = {
-    id: courses[courses.length - 1].id + 1,
-    name: name,
-    description: description
-  };
+  return readCourses().then((courses) => {
+    const newCourse = {
+      id: courses.reduce((maxId, course) => Math.max(maxId, course.id), 0) + 1,
+      name,
+      description
+    };
 
-  courses.push(newCourse);
-  return newCourse;
+    courses.push(newCourse);
+    return saveCourses(courses).then(() => newCourse);
+  });
 };
 
-// עדכן קורס
 export const updateCourseService = (id, name, description) => {
   if (!name || !description) {
-    throw new Error('חסרים: name או description');
+    return Promise.reject(createServiceError('חסרים: name או description', 400));
   }
 
-  const index = courses.findIndex(c => c.id === id);
+  return readCourses().then((courses) => {
+    const index = courses.findIndex((course) => course.id === id);
 
-  if (index === -1) {
-    throw new Error(`קורס עם ID ${id} לא נמצא`);
-  }
+    if (index === -1) {
+      throw createServiceError(`קורס עם ID ${id} לא נמצא`, 404);
+    }
 
-  const updatedCourse = {
-    id: id,
-    name: name,
-    description: description
-  };
+    const updatedCourse = { id, name, description };
+    courses[index] = updatedCourse;
 
-  courses[index] = updatedCourse;
-  return updatedCourse;
+    return saveCourses(courses).then(() => updatedCourse);
+  });
 };
 
-// מחק קורס
 export const deleteCourseService = (id) => {
-  const index = courses.findIndex(c => c.id === id);
+  return readCourses().then((courses) => {
+    const index = courses.findIndex((course) => course.id === id);
 
-  if (index === -1) {
-    throw new Error(`קורס עם ID ${id} לא נמצא`);
-  }
+    if (index === -1) {
+      throw createServiceError(`קורס עם ID ${id} לא נמצא`, 404);
+    }
 
-  courses.splice(index, 1);
-  return { message: `קורס עם ID ${id} נמחק בהצלחה` };
+    courses.splice(index, 1);
+    return saveCourses(courses).then(() => ({
+      message: `קורס עם ID ${id} נמחק בהצלחה`
+    }));
+  });
 };

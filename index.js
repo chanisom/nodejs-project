@@ -1,11 +1,9 @@
 import 'dotenv/config';
 import express from 'express';
-import chalk from 'chalk';
 
 import studentsRoutes from './routes/studentsRoutes.js';
 import coursesRoutes from './routes/coursesRoutes.js';
-import enrollmentsRoutes from './routes/enrollmentsRoutes.js';  
-import { courses } from './data/courses.js';
+import enrollmentsRoutes from './routes/enrollmentsRoutes.js';
 
 import { authMiddleware } from './middlewares/authMiddleware.js';
 
@@ -20,21 +18,16 @@ app.get('/', (req, res) => {
   });
 });
 
-app.use(authMiddleware); 
+app.use(authMiddleware);
 
 
 // חיבור ה-Routes
 app.use('/students', studentsRoutes);
 app.use('/courses', coursesRoutes);
-app.use('/enrollments', enrollmentsRoutes);   // ← חדש
+app.use('/enrollments', enrollmentsRoutes);
 
 const port = Number(process.env.PORT) || 3000;
 
 app.listen(port, () => {
   console.log(`השרת רץ על http://localhost:${port}`);
-  courses.forEach(course => {
-    console.log(chalk.red(`id of the course: ${course.id}`));
-    console.log(chalk.yellow(`the course: ${course.name}`));
-    console.log(chalk.blue(`what in the course? ${course.description}`));
-  });
 });

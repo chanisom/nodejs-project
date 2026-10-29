@@ -1,70 +1,50 @@
-import { courses } from '../data/courses.js';
-import { students } from '../data/students.js';
+import {
+  getAllCoursesService,
+  getCourseByIdService,
+  createCourseService,
+  updateCourseService,
+  deleteCourseService
+} from '../services/coursesService.js';
 
-// קריאה כל הקורסים
+const sendServiceError = (res, error) => {
+  res.status(error.statusCode || 500).json({ error: error.message });
+};
+
 export const getAllCourses = (req, res) => {
-  res.json(courses);
+  return getAllCoursesService()
+    .then((courses) => res.json(courses))
+    .catch((error) => sendServiceError(res, error));
 };
 
-// קריאה קורס לפי ID
 export const getCourseById = (req, res) => {
-  const id = parseInt(req.params.id);
-  const course = courses.find(c => c.id === id);
+  const id = parseInt(req.params.id, 10);
 
-  if (!course) {
-    return res.status(404).json({ error: `קורס עם ID ${id} לא נמצא` });
-  }
-
-  const enrolledStudents = students.filter(s => s.enrolledCourses.includes(id));
-
-  const courseWithStudents = {
-    ...course,
-    students: enrolledStudents
-  };
-
-  res.json(courseWithStudents);
+  return getCourseByIdService(id)
+    .then((course) => res.json(course))
+    .catch((error) => sendServiceError(res, error));
 };
 
-// יצירת קורס חדש
 export const createCourse = (req, res) => {
-  const newCourse = {
-    id: courses[courses.length - 1].id + 1,
-    name: req.body.name,
-    description: req.body.description
-  };
+  const { name, description } = req.body;
 
-  courses.push(newCourse);
-  res.json(newCourse);
+  return createCourseService(name, description)
+    .then((course) => res.json(course))
+    .catch((error) => sendServiceError(res, error));
 };
 
-// עדכון קורס
 export const updateCourse = (req, res) => {
-  const id = parseInt(req.params.id);
-  const index = courses.findIndex(c => c.id === id);
+  const id = parseInt(req.params.id, 10);
+  const { name, description } = req.body;
 
-  if (index === -1) {
-    return res.status(404).json({ error: `קורס עם ID ${id} לא נמצא` });
-  }
-
-  const updatedCourse = {
-    id: id,
-    name: req.body.name,
-    description: req.body.description
-  };
-
-  courses[index] = updatedCourse;
-  res.json(updatedCourse);
+  return updateCourseService(id, name, description)
+    .then((course) => res.json(course))
+    .catch((error) => sendServiceError(res, error));
 };
 
-// מחיקת קורס
 export const deleteCourse = (req, res) => {
-  const id = parseInt(req.params.id);
-  const index = courses.findIndex(c => c.id === id);
+  const id = parseInt(req.params.id, 10);
 
-  if (index === -1) {
-    return res.status(404).json({ error: `קורס עם ID ${id} לא נמצא` });
-  }
-
-  courses.splice(index, 1);
-  res.json({ message: `קורס עם ID ${id} נמחק בהצלחה` });
+  return deleteCourseService(id)
+    .then((result) => res.json(result))
+    .catch((error) => sendServiceError(res, error));
 };

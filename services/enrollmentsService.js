@@ -3,33 +3,30 @@ import { readStudents } from '../data/students.js';
 import { readCourses } from '../data/courses.js';
 import { createServiceError } from './serviceError.js';
 
-export const getAllEnrollmentsService = () => {
-  return readEnrollments();
+export const getAllEnrollmentsService = async () => {
+  const enrollments = await readEnrollments();
+  return enrollments;
 };
 
-export const getEnrollmentByIdService = (id) => {
-  return readEnrollments().then((enrollments) => {
-    const enrollment = enrollments.find((item) => item.id === id);
-
-    if (!enrollment) {
+export const getEnrollmentByIdService = async (id) => {
+  const enrollments = await readEnrollments();
+  const enrollment = enrollments.find((item) => item.id === id);
+  if (!enrollment) {
       throw createServiceError(`רישום עם ID ${id} לא נמצא`, 404);
-    }
-
+  }
     return enrollment;
-  });
-};
+  };
 
-export const createEnrollmentService = (studentId, courseId) => {
+export const createEnrollmentService = async (studentId, courseId) => {
   if (!studentId || !courseId) {
-    return Promise.reject(createServiceError('חסרים: studentId או courseId', 400));
+    throw createServiceError('חסרים: studentId או courseId', 400);
   }
 
-  return Promise.all([readEnrollments(), readStudents(), readCourses()])
-    .then(([enrollments, students, courses]) => {
-      const studentExists = students.find((student) => student.id === studentId);
-      if (!studentExists) {
-        throw createServiceError(`תלמיד עם ID ${studentId} לא נמצא`, 404);
-      }
+  const [enrollments, students, courses] = await Promise.all([readEnrollments(), readStudents(), readCourses()]);
+  const studentExists = students.find((student) => student.id === studentId);
+  if (!studentExists) {
+    throw createServiceError(`תלמיד עם ID ${studentId} לא נמצא`, 404);
+  }
 
       const courseExists = courses.find((course) => course.id === courseId);
       if (!courseExists) {
@@ -51,21 +48,19 @@ export const createEnrollmentService = (studentId, courseId) => {
       };
 
       enrollments.push(newEnrollment);
-      return saveEnrollments(enrollments).then(() => newEnrollment);
-    });
-};
+      await saveEnrollments(enrollments);
+      return newEnrollment;
+    };
 
-export const deleteEnrollmentService = (id) => {
-  return readEnrollments().then((enrollments) => {
-    const index = enrollments.findIndex((enrollment) => enrollment.id === id);
+export const deleteEnrollmentService = async (id) => {
+  const enrollments = await readEnrollments();
+  const index = enrollments.findIndex((enrollment) => enrollment.id === id);
 
     if (index === -1) {
       throw createServiceError(`רישום עם ID ${id} לא נמצא`, 404);
     }
 
     enrollments.splice(index, 1);
-    return saveEnrollments(enrollments).then(() => ({
-      message: `רישום עם ID ${id} נמחק בהצלחה`
-    }));
-  });
-};
+    await saveEnrollments(enrollments);
+    return { message: `רישום עם ID ${id} נמחק בהצלחה` };
+  };

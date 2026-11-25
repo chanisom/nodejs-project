@@ -6,36 +6,50 @@ import {
 } from '../services/enrollmentsService.js';
 
 const sendServiceError = (res, error) => {
-  res.status(error.statusCode || 500).json({ error: error.message });
+  const statusCode = error.statusCode || 500;
+  const message = statusCode === 500 ? 'אירעה שגיאה בשרת' : error.message;
+  res.status(statusCode).json({ error: message });
 };
 
-export const getAllEnrollments = (req, res) => {
-  return getAllEnrollmentsService()
-    .then((enrollments) => res.json(enrollments))
-    .catch((error) => sendServiceError(res, error));
+export const getAllEnrollments = async (req, res) => {
+  try {
+    const enrollments = await getAllEnrollmentsService();
+    res.json(enrollments);
+  } catch (error) {
+    sendServiceError(res, error);
+  }
 };
 
-export const getEnrollmentById = (req, res) => {
+export const getEnrollmentById = async (req, res) => {
   const id = parseInt(req.params.id, 10);
 
-  return getEnrollmentByIdService(id)
-    .then((enrollment) => res.json(enrollment))
-    .catch((error) => sendServiceError(res, error));
+  try {
+    const enrollment = await getEnrollmentByIdService(id);
+    res.json(enrollment);
+  } catch (error) {
+    sendServiceError(res, error);
+  }
 };
 
-export const createEnrollment = (req, res) => {
-  return createEnrollmentService(
-    req.body.studentId,
-    req.body.courseId
-  )
-    .then((newEnrollment) => res.json(newEnrollment))
-    .catch((error) => sendServiceError(res, error));
+export const createEnrollment = async (req, res) => {
+  try {
+    const newEnrollment = await createEnrollmentService(
+      req.body.studentId,
+      req.body.courseId
+    );
+    res.json(newEnrollment);
+  } catch (error) {
+    sendServiceError(res, error);
+  }
 };
 
-export const deleteEnrollment = (req, res) => {
+export const deleteEnrollment = async (req, res) => {
   const id = parseInt(req.params.id, 10);
 
-  return deleteEnrollmentService(id)
-    .then((result) => res.json(result))
-    .catch((error) => sendServiceError(res, error));
+  try {
+    const result = await deleteEnrollmentService(id);
+    res.json(result);
+  } catch (error) {
+    sendServiceError(res, error);
+  }
 };

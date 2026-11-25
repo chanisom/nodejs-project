@@ -7,44 +7,61 @@ import {
 } from '../services/coursesService.js';
 
 const sendServiceError = (res, error) => {
-  res.status(error.statusCode || 500).json({ error: error.message });
+  const statusCode = error.statusCode || 500;
+  const message = statusCode === 500 ? 'אירעה שגיאה בשרת' : error.message;
+  res.status(statusCode).json({ error: message });
 };
 
-export const getAllCourses = (req, res) => {
-  return getAllCoursesService()
-    .then((courses) => res.json(courses))
-    .catch((error) => sendServiceError(res, error));
+export const getAllCourses = async (req, res) => {
+  try {
+    const courses = await getAllCoursesService();
+    res.json(courses);
+  } catch (error) {
+    sendServiceError(res, error);
+  }
 };
 
-export const getCourseById = (req, res) => {
+export const getCourseById = async (req, res) => {
   const id = parseInt(req.params.id, 10);
 
-  return getCourseByIdService(id)
-    .then((course) => res.json(course))
-    .catch((error) => sendServiceError(res, error));
+  try {
+    const course = await getCourseByIdService(id);
+    res.json(course);
+  } catch (error) {
+    sendServiceError(res, error);
+  }
 };
 
-export const createCourse = (req, res) => {
+export const createCourse = async (req, res) => {
   const { name, description } = req.body;
 
-  return createCourseService(name, description)
-    .then((course) => res.json(course))
-    .catch((error) => sendServiceError(res, error));
+  try {
+    const course = await createCourseService(name, description);
+    res.json(course);
+  } catch (error) {
+    sendServiceError(res, error);
+  }
 };
 
-export const updateCourse = (req, res) => {
+export const updateCourse = async (req, res) => {
   const id = parseInt(req.params.id, 10);
   const { name, description } = req.body;
 
-  return updateCourseService(id, name, description)
-    .then((course) => res.json(course))
-    .catch((error) => sendServiceError(res, error));
+  try {
+    const course = await updateCourseService(id, name, description);
+    res.json(course);
+  } catch (error) {
+    sendServiceError(res, error);
+  }
 };
 
-export const deleteCourse = (req, res) => {
+export const deleteCourse = async (req, res) => {
   const id = parseInt(req.params.id, 10);
 
-  return deleteCourseService(id)
-    .then((result) => res.json(result))
-    .catch((error) => sendServiceError(res, error));
+  try {
+    const result = await deleteCourseService(id);
+    res.json(result);
+  } catch (error) {
+    sendServiceError(res, error);
+  }
 };

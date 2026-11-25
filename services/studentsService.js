@@ -2,12 +2,12 @@ import { readCourses } from '../data/courses.js';
 import { readStudents, saveStudents } from '../data/students.js';
 import { createServiceError } from './serviceError.js';
 
-export const getAllStudentsService = () => {
-  return readStudents();
+export const getAllStudentsService = async () => {
+  return await readStudents();
 };
 
-export const getStudentByIdService = (id) => {
-  return Promise.all([readStudents(), readCourses()]).then(([students, courses]) => {
+export const getStudentByIdService = async (id) => {
+  const [students, courses] = await Promise.all([readStudents(), readCourses()]);
     const student = students.find((item) => item.id === id);
 
     if (!student) {
@@ -22,34 +22,33 @@ export const getStudentByIdService = (id) => {
       ...student,
       courseDetails: enrolledCourses
     };
-  });
 };
 
-export const createStudentService = (name, phone, enrolledCourses) => {
+export const createStudentService = async (name, phone, enrolledCourses) => {
   if (!name || !phone) {
-    return Promise.reject(createServiceError('חסרים: name או phone', 400));
+    throw createServiceError('חסרים: name או phone', 400);
   }
 
-  return readStudents().then((students) => {
-    const newStudent = {
-      id: students.reduce((maxId, student) => Math.max(maxId, student.id), 0) + 1,
-      name,
-      phone,
-      enrolledCourses: enrolledCourses || []
-    };
+  const students = await readStudents();
+  const newStudent = {
+    id: students.reduce((maxId, student) => Math.max(maxId, student.id), 0) + 1,
+    name,
+    phone,
+    enrolledCourses: enrolledCourses || []
+  };
 
     students.push(newStudent);
-    return saveStudents(students).then(() => newStudent);
-  });
+    await saveStudents(students);
+    return newStudent;
 };
 
-export const updateStudentService = (id, name, phone, enrolledCourses) => {
+export const updateStudentService = async (id, name, phone, enrolledCourses) => {
   if (!name || !phone) {
-    return Promise.reject(createServiceError('חסרים: name או phone', 400));
+    throw createServiceError('חסרים: name או phone', 400);
   }
 
-  return readStudents().then((students) => {
-    const index = students.findIndex((student) => student.id === id);
+  const students = await readStudents();
+  const index = students.findIndex((student) => student.id === id);
 
     if (index === -1) {
       throw createServiceError(`תלמיד עם ID ${id} לא נמצא`, 404);
@@ -63,21 +62,19 @@ export const updateStudentService = (id, name, phone, enrolledCourses) => {
     };
 
     students[index] = updatedStudent;
-    return saveStudents(students).then(() => updatedStudent);
-  });
+    await saveStudents(students);
+    return updatedStudent;
 };
 
-export const deleteStudentService = (id) => {
-  return readStudents().then((students) => {
-    const index = students.findIndex((student) => student.id === id);
+export const deleteStudentService = async (id) => {
+  const students = await readStudents();
+  const index = students.findIndex((student) => student.id === id);
 
     if (index === -1) {
       throw createServiceError(`תלמיד עם ID ${id} לא נמצא`, 404);
     }
 
     students.splice(index, 1);
-    return saveStudents(students).then(() => ({
-      message: `תלמיד עם ID ${id} נמחק בהצלחה`
-    }));
-  });
+    await saveStudents(students);
+    return { message: `תלמיד עם ID ${id} נמחק בהצלחה` };
 };

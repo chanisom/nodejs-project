@@ -2,11 +2,12 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 const studentsFile = new URL('./students.json', import.meta.url);
 
-export const readStudents = () => {
-  return readFile(studentsFile, 'utf8').then((text) => JSON.parse(text));
+export const readStudents = async () => {
+  const text = await readFile(studentsFile, 'utf8');
+  return JSON.parse(text);
 };
 
-export const saveStudents = (students) => {
+export const saveStudents = async (students) => {
   const text = JSON.stringify(students, null, 2);
-  return writeFile(studentsFile, text, 'utf8');
+  await writeFile(studentsFile, text, 'utf8');
 };

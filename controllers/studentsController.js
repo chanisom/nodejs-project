@@ -7,44 +7,61 @@ import {
 } from '../services/studentsService.js';
 
 const sendServiceError = (res, error) => {
-  res.status(error.statusCode || 500).json({ error: error.message });
+  const statusCode = error.statusCode || 500;
+  const message = statusCode === 500 ? 'אירעה שגיאה בשרת' : error.message;
+  res.status(statusCode).json({ error: message });
 };
 
-export const getAllStudents = (req, res) => {
-  return getAllStudentsService()
-    .then((students) => res.json(students))
-    .catch((error) => sendServiceError(res, error));
+export const getAllStudents = async (req, res) => {
+  try {
+    const students = await getAllStudentsService();
+    res.json(students);
+  } catch (error) {
+    sendServiceError(res, error);
+  }
 };
 
-export const getStudentById = (req, res) => {
+export const getStudentById =  async (req, res) => {
   const id = parseInt(req.params.id, 10);
 
-  return getStudentByIdService(id)
-    .then((student) => res.json(student))
-    .catch((error) => sendServiceError(res, error));
+  try {
+    const student = await getStudentByIdService(id);
+    res.json(student);
+  } catch (error) {
+    sendServiceError(res, error);
+  }
 };
 
-export const createStudent = (req, res) => {
+export const createStudent = async (req, res) => {
   const { name, phone, enrolledCourses } = req.body;
 
-  return createStudentService(name, phone, enrolledCourses)
-    .then((student) => res.json(student))
-    .catch((error) => sendServiceError(res, error));
+  try {
+    const student = await createStudentService(name, phone, enrolledCourses);
+    res.json(student);
+  } catch (error) {
+    sendServiceError(res, error);
+  }
 };
 
-export const updateStudent = (req, res) => {
+export const updateStudent = async (req, res) => {
   const id = parseInt(req.params.id, 10);
   const { name, phone, enrolledCourses } = req.body;
 
-  return updateStudentService(id, name, phone, enrolledCourses)
-    .then((student) => res.json(student))
-    .catch((error) => sendServiceError(res, error));
+  try {
+    const student = await updateStudentService(id, name, phone, enrolledCourses);
+    res.json(student);
+  } catch (error) {
+    sendServiceError(res, error);
+  }
 };
 
-export const deleteStudent = (req, res) => {
+export const deleteStudent = async (req, res) => {
   const id = parseInt(req.params.id, 10);
 
-  return deleteStudentService(id)
-    .then((result) => res.json(result))
-    .catch((error) => sendServiceError(res, error));
+  try {
+    const result = await deleteStudentService(id);
+    res.json(result);
+  } catch (error) {
+    sendServiceError(res, error);
+  }
 };
